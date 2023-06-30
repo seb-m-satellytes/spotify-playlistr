@@ -3,6 +3,7 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import re
 from dotenv import load_dotenv
+import inquirer
 
 def create_playlist():
     # Load environment variables from .env file
@@ -13,27 +14,27 @@ def create_playlist():
     client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
     redirect_url = os.getenv("SPOTIFY_REDIRECT_URL")
 
+
     def choose_file():
         # List all files in the "queries" directory
         files = sorted(os.listdir("queries"), reverse=True)
 
-        # Print all files for the user to choose from
-        for i, file in enumerate(files):
-            print(f"{i+1}. {file}")
-
-        # Ask the user to select a file
-        userchoice = input("Please select a file by entering its number: ")
-
-        # set choice if it is a valid number, otherwise exit
-        choice = int(userchoice) - 1 if userchoice.isnumeric() else -1
-
-        # Make sure the user's choice is valid
-        if not 0 <= choice < len(files):
-            print("Invalid choice")
+        # If there are no files, print an error message and exit
+        if not files:
+            print("No files found in the 'queries' directory. Please generate a query file first.")
             exit(1)
 
+        questions = [
+            inquirer.List('choice',
+                          message="(2) Please select a file",
+                          choices=files),
+        ]
+
+        answers = inquirer.prompt(questions)
+
         # Get the selected filename
-        return files[choice]
+        return answers['choice']
+
 
     def get_title(filename):
         # Extract the title from the filename and convert to normal casing
@@ -55,7 +56,7 @@ def create_playlist():
                 track_details.append(f"{track['name']} by {track['artists'][0]['name']}")
 
         # Display the found tracks to the user
-        print("\nFound the following tracks:")
+        print("\n(2) Found the following tracks:")
         for i, detail in enumerate(track_details):
             print(f"{i+1}. {detail}")
 
@@ -63,7 +64,7 @@ def create_playlist():
 
     def create_playlist(track_ids, user_id, playlist_name):
         # Ask for confirmation
-        confirmation = input("\nDo you want to create a playlist with these tracks? Press Enter to confirm, or type anything else to cancel:")
+        confirmation = input("\n(2) Do you want to create a playlist with these tracks? Press Enter to confirm, or type anything else to cancel:")
         if confirmation.lower() != "":
             print("Cancelled playlist creation.")
             exit(0)
@@ -73,8 +74,7 @@ def create_playlist():
         sp.playlist_add_items(playlist['id'], track_ids)
 
         # Step 7: Return the playlist URL
-        print("Created playlist:", playlist['external_urls']['spotify'])
-
+        print("Success! 🥳 Created playlist:", playlist['external_urls']['spotify'])
     filename = choose_file()
     title = get_title(filename)
 
@@ -84,7 +84,7 @@ def create_playlist():
 
 
     # Step 4: Ask for the playlist name
-    playlist_name = input(f"Please enter the playlist name (press Enter for default '{title}'): ")
+    playlist_name = input(f"(2) Please enter the playlist name (press Enter for to accept suggestion '{title}'): ")
     playlist_name = playlist_name or title
 
     # Step 5: Authenticate with Spotify API and create the playlist
