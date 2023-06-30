@@ -1,0 +1,7 @@
+.env
+.cache
+/queries
+.pdm-python
+/.venv
+/.idea
+__pycache__
